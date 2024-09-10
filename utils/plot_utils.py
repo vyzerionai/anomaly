@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from typing import Optional, List
-from utils import sample_utils
+import sample_utils
 
 
 def get_palettes(desired_len, palettes: List[str] = None):
