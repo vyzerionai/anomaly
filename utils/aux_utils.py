@@ -89,7 +89,7 @@ def apply_auxiliary_features(flights: dict[tuple[str,str],
         initial_complaint = None
         corrective_action = None
       flight_data = auxiliary_features[auxf].append(flight_data)
-      flights[flight_key] = tuple(flight_file, flight_data, initial_complaint, corrective_action)
+      flights[flight_key] = (flight_file, flight_data, initial_complaint, corrective_action)
 
   return flights
 
