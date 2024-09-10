@@ -73,8 +73,7 @@ class FourierAuxiliaryFeature(BaseAuxiliaryFeature):
 
 
 
-def apply_auxiliary_features(flights: dict[tuple[str,str],
-                                           tuple[str, pd.DataFrame, Optional[str], Optional[str]]],
+def apply_auxiliary_features(flights,
                              auxiliary_features: dict[str, BaseAuxiliaryFeature]):
 
   for flight_key in flights:
