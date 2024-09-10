@@ -1,7 +1,7 @@
 import abc
 import pandas as pd
 import numpy as np
-from typing import Sequence
+from typing import Sequence, Optional
 from scipy import signal
 
 
@@ -74,7 +74,7 @@ class FourierAuxiliaryFeature(BaseAuxiliaryFeature):
 
 
 def apply_auxiliary_features(flights: dict[tuple[str,str],
-                                           tuple[str, pd.DataFrame]],
+                                           tuple[str, pd.DataFrame, Optional[str], Optional[str]]],
                              auxiliary_features: dict[str, BaseAuxiliaryFeature]):
 
   for flight_key in flights:
@@ -89,7 +89,7 @@ def apply_auxiliary_features(flights: dict[tuple[str,str],
         initial_complaint = None
         corrective_action = None
       flight_data = auxiliary_features[auxf].append(flight_data)
-      flights[flight_key] = tuple([flight_file, flight_data, initial_complaint, corrective_action])
+      flights[flight_key] = (flight_file, flight_data, initial_complaint, corrective_action)
 
   return flights
 
