@@ -254,7 +254,8 @@ def get_single_ad_timeseries(ad, observations: pd.DataFrame) -> pd.DataFrame:
 
 
 def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
-                             label: str, predictions: Optional[pd.DataFrame] = None,
+                             label: str,
+                             predictions: Optional[pd.Series] = None,
                              anomaly_smoothing_kernel: int = 15,
                              timeseries_dir: str = None,
                              ad_name: str = 'AD'):
@@ -264,7 +265,7 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
         observations: Dataframe with columns as features.
         variable_name: Column name to plot (must be a col in the observations).
         label: Added to the title of the chart.
-        predictions: Dataframe of the anomaly detector's predictions.
+        predictions: Data series containing the anomaly detector's predictions.
         anomaly_smoothing_kernel: window size to smooth the anomaly score.
         timeseries_dir: directory to save timeseries as a png
         ad_name: name of the AD
@@ -304,7 +305,7 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
 
     if 'class_prob' in observations.columns or predictions is not None:
         if predictions is not None:
-            ad_predictions = predictions['class_prob']
+            ad_predictions = predictions
         else:
             ad_predictions = observations['class_prob']
         ad_predictions = 1 - ad_predictions
