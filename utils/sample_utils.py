@@ -1,10 +1,9 @@
 """Utilities to to generate or modify data samples."""
-from typing import Dict, List
-
+from typing import Dict, List, Sequence, Mapping
+import collections
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-
+from keras.utils import to_categorical
 
 class Variable(object):
     def __init__(self, index, name, mean, std, min=None, max=None):
@@ -17,6 +16,43 @@ class Variable(object):
 
 
 NormalizationInfo = Dict[str, Variable]
+
+
+def get_categoricals(sample: pd.DataFrame) -> Mapping[str, Sequence[tuple[str, int]]]:
+    columns = sample.columns
+    categoricals = collections.defaultdict(list)
+    for col in columns:
+        count = sample[col].sum()
+
+        if col.startswith("aux_cat"):
+            splits = col.split("_")
+            categoricals[splits[2]].append((splits[3], count))
+    return categoricals
+
+
+def sample_categorical(
+    cat_name: str,
+    class_counts: Sequence[tuple[str, int]],
+    n_points: int,
+    equal_odds=False,
+    min_prob=0.05,
+):
+    if equal_odds:
+        p_class = [1.0 / len(class_counts) for _ in class_counts]
+    else:
+        total_count = float(np.sum([cat[1] for cat in class_counts]))
+        p_class = [cat[1] / total_count for cat in class_counts]
+        p_class = [min_prob + p for p in p_class]
+        p_class /= np.sum(p_class)
+
+    index_array = np.random.choice(len(class_counts), n_points, p=p_class)
+
+    one_hot = to_categorical(index_array, len(class_counts))
+
+    columns = ["aux_cat_%s_%s" % (cat_name, cat[0]) for cat in class_counts]
+
+    return pd.DataFrame(one_hot, columns=columns)
+
 
 
 def get_minmax_normalization_info(df: pd.DataFrame) -> Dict[str, Variable]:
@@ -167,39 +203,102 @@ def denormalize(
     return pd.concat([df, df_norm[not_norm_cols]], axis=1)
 
 
-def write_normalization_info(normalization_info: Dict[str, Variable], filename: str):
-    """Writes variable normalization info to CSV."""
+def get_neg_sample(pos_sample: pd.DataFrame,
+                   n_points: int,
+                   do_permute: bool = False,
+                   delta: float = 0.0) -> pd.DataFrame:
+    """Creates a negative sample from the cuboid bounded by +/- delta.
 
-    def to_df(normalization_info):
-        df = pd.DataFrame(columns=["index", "mean", "std"])
-        for variable in normalization_info:
-            df.loc[variable] = [
-                normalization_info[variable].index,
-                normalization_info[variable].mean,
-                normalization_info[variable].std,
-            ]
-        return df
+    Where, [min - delta, max + delta] for each of the dimensions.
+    If do_permute, then rather than uniformly sampling, simply
+    randomly permute each dimension independently.
+    The positive sample, pos_sample is a pandas DF that has a column
+    labeled 'class_label' where 1.0 indicates Normal, and
+    0.0 indicates anomalous.
 
-    with tf.io.gfile.GFile(filename, "w") as csv_file:
-        to_df(normalization_info).to_csv(csv_file, sep="\t")
+    Args:
+      pos_sample: DF with numeric dimensions
+      n_points: number points to be returned
+      do_permute: permute or sample
+      delta: fraction of [max - min] to extend the sampling.
 
+    Returns:
+      A dataframe  with the same number of columns, and a label column
+      'class_label' where every point is 0.
+    """
+    df_neg = pd.DataFrame()
 
-def read_normalization_info(filename: str) -> Dict[str, Variable]:
-    """Reads variable normalization info from CSV."""
+    pos_sample_n = pos_sample.sample(n=n_points, replace=True)
 
-    def from_df(df):
-        normalization_info = {}
-        for name, row in df.iterrows():
-            normalization_info[name] = Variable(
-                row["index"], name, row["mean"], row["std"]
+    for field_name in list(pos_sample):
+        if field_name == "class_label":
+            continue
+
+        if field_name.startswith("aux_cat"):
+            continue
+
+        if do_permute:
+            df_neg[field_name] = np.random.permutation(
+                np.array(pos_sample_n[field_name])
             )
-        return normalization_info
 
-    normalization_info = {}
-    if not tf.io.gfile.exists(filename):
-        raise AssertionError("{} does not exist".format(filename))
-    with tf.io.gfile.GFile(filename, "r") as csv_file:
-        df = pd.read_csv(csv_file, header=0, index_col=0, sep="\t")
-        normalization_info = from_df(df)
-    return normalization_info
+        # If all the points are integers, then sample from integers only.
 
+        if all(v.is_integer() for v in pos_sample[field_name]):
+            integer_range = list(set(pos_sample[field_name]))
+            df_neg[field_name] = np.random.choice(
+                integer_range, size=n_points, replace=True
+            ).astype(np.float32)
+
+        else:
+            low_val = min(pos_sample[field_name])
+            high_val = max(pos_sample[field_name])
+            delta_val = high_val - low_val
+            df_neg[field_name] = np.random.uniform(
+                low=low_val - delta * delta_val,
+                high=high_val + delta * delta_val,
+                size=n_points,
+            )
+
+    categoricals = get_categoricals(pos_sample)
+
+    if categoricals:
+        cat_dfs = []
+        for cat in categoricals:
+            cat_df = sample_categorical(
+                cat, categoricals[cat], n_points=n_points, equal_odds=False
+            )
+            cat_dfs.append(cat_df)
+
+        categorical_df = pd.concat(cat_dfs, axis=1)
+        categorical_df.index = df_neg.index
+
+        df_neg = pd.concat([df_neg, categorical_df], axis=1)
+
+    df_neg["class_label"] = [0 for _ in range(n_points)]
+    return df_neg[pos_sample.columns]
+
+
+def apply_negative_sample(positive_sample: pd.DataFrame,
+                          sample_ratio: float,
+                          sample_delta: float,
+                          do_permute=False) -> pd.DataFrame:
+    """Returns a dataset with negative and positive sample.
+
+    Args:
+        positive_sample: actual, observed sample where each col is a feature.
+        sample_ratio: the desired ratio of negative to positive points
+        sample_delta: the extension beyond observed limits to bound the neg sample
+        do_permute: permute or sample
+    Returns:
+        DataFrame with features + class label, with 1 being observed and 0 negative.
+    """
+
+    positive_sample["class_label"] = 1
+    n_neg_points = int(len(positive_sample) * sample_ratio)
+
+    negative_sample = get_neg_sample(
+        positive_sample, n_neg_points, do_permute=do_permute, delta=sample_delta)
+    training_sample = pd.concat(
+        [positive_sample, negative_sample], ignore_index=True, sort=True)
+    return training_sample.reindex(np.random.permutation(training_sample.index))
