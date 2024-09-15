@@ -1,8 +1,9 @@
 import abc
 import pandas as pd
 import numpy as np
-from typing import Sequence, Optional
+from typing import Sequence, Optional, Mapping, Dict
 from scipy import signal
+import collections
 
 
 class BaseAuxiliaryFeature(metaclass= abc.ABCMeta):
@@ -64,17 +65,89 @@ class FourierAuxiliaryFeature(BaseAuxiliaryFeature):
   def feature_names(self) -> list[str]:
     return self._feature_names
 
+
   def _compute_fourier_coeffs(self, series: pd.Series) -> tuple[np.array, np.array, np.array]:
     fs = 1
-    f, t, Sxx = signal.spectrogram(series, fs, nperseg = 256, window=('tukey', 0.5),
-                                   scaling = 'spectrum', mode = 'magnitude', noverlap=255)
+    f, t, Sxx = signal.spectrogram(series, fs, nperseg = 256,
+                                   window=('tukey', 0.5), scaling = 'spectrum',
+                                   mode = 'magnitude', noverlap=255)
 
     return f, t, Sxx
 
 
+class OneHotAuxiliaryFeature(BaseAuxiliaryFeature):
+  """Class for augmenting raw feature with auxiliary features."""
 
-def apply_auxiliary_features(flights,
-                             auxiliary_features: dict[str, BaseAuxiliaryFeature]):
+  def __init__(self, categorical_columns: Mapping[str, Sequence[str]]):
+    self._one_hot_cols = []
+    self._categorical_cols = categorical_columns
+    self._feature_names = []
+    for col in categorical_columns:
+      feature_names = [self._to_one_hot_column_name(col, feature) for feature in categorical_columns[col]]
+      self._feature_names.extend(feature_names)
+
+
+  def _to_one_hot_column_name(self, categorical_column_name: str, categorical_value: str):
+    return "aux_cat_%s_%s" %(categorical_column_name, categorical_value)
+
+
+  def _categorical_to_onehot(self, df_flight, column_name):
+
+    categorical_values = self._categorical_cols[column_name]
+    for categorical_value in categorical_values:
+      one_hot_column_name  = self._to_one_hot_column_name(
+        column_name, categorical_value)
+      if one_hot_column_name not in self._one_hot_cols:
+        self._one_hot_cols.append(one_hot_column_name)
+      df_flight[one_hot_column_name] = [
+        float(v == categorical_value) for v in df_flight[column_name]]
+    return df_flight
+
+
+
+  def append(self, flight_data: pd.DataFrame) -> pd.DataFrame:
+    """Returns a new dataframe, appended with the auxiliary features."""
+
+    for col in self._categorical_cols:
+      flight_data = self._categorical_to_onehot(flight_data, col)
+
+    return flight_data
+
+  @property
+  def feature_names(self) -> Sequence[str]:
+    """Returns the name of the features."""
+    return self._one_hot_cols
+
+
+
+def extract_categorical_columns_df(df_flight: pd.DataFrame):
+  categorical_columns = collections.defaultdict(set)
+  df = df_flight.dropna()
+
+  for col, col_type in df.dtypes.items():
+      if col_type == 'object':
+        categorical_columns[col].update(set(df[col]))
+  return categorical_columns
+
+
+
+def extract_categorical_columns(flight_data: Mapping[tuple[str, str, str],
+                                tuple[str, pd.DataFrame]]) -> Mapping[str, set[str]]:
+  categorical_columns = collections.defaultdict(set)
+
+  for flight_key in flight_data:
+    df = flight_data[flight_key][1].dropna()
+
+    for col, col_type in df.dtypes.items():
+      if col_type == 'object':
+        categorical_columns[col].update(set(df[col]))
+
+  return categorical_columns
+
+
+def apply_auxiliary_features(flights: Dict[tuple[str, str],
+                    tuple[str, pd.DataFrame, Optional[str], Optional[str]]],
+                    auxiliary_features: dict[str, BaseAuxiliaryFeature]):
 
   for flight_key in flights:
     for auxf in auxiliary_features:
