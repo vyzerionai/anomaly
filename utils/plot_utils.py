@@ -6,11 +6,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from typing import Optional, List
-import sample_utils
+from . import sample_utils
 
 
 def get_palettes(desired_len, palettes: List[str] = None):
-    """Return a set of palettes"""
+    """Return a set of palettes
+    Args:
+        desired_len: the number of palettes options desired
+        palettes: Optional set of palettes
+
+    Returns:
+        An array of palettes for plotting
+    """
     if palettes is None:
         palettes = ['PuBu', 'Reds', 'Greens', 'Blues', 'Oranges', 'PuRd',
                     'Wistia', 'Purples', 'pink_r', ]
@@ -25,26 +32,40 @@ def get_palettes(desired_len, palettes: List[str] = None):
 
 
 def plot_all_feature_spreads(feature_lists, df_consolidated: pd.DataFrame,
-                             observations: pd.DataFrame, palettes=None, png_dir=None):
+                             observations: pd.DataFrame, palettes=None,
+                             png_dir=None, show_plot=True):
     """
     Create boxplots of features that are aggregated together
-    :param feature_lists: lists of features to plot together
-    :param df_consolidated: dataframe with a sample of the training or consolidated data
-    :param observations: dataframe of the observations from the selected flight
-    :param palettes: optional set of palettes to plot the different feature plots
-    :param png_dir: optional directory to save all the feature spreads as png
-    :param pdf_dir: optional directory to save all the feature spreads as a pdf
-    :return: None
+    Args:
+        feature_lists: lists of features to plot together
+        df_consolidated: dataframe with a sample of the training or consolidated data
+        observations: dataframe of the observations from the selected flight
+        palettes: optional set of palettes to plot the different feature plots
+        png_dir: optional directory to save all the feature spreads as png
+        show_plot: option of whether or not to display the plots generated
+    Returns: None
     """
     palettes = get_palettes(len(feature_lists), palettes)
 
     for color, selected_features in zip(palettes, feature_lists):
-        df_feature = create_feature_df(df_consolidated, observations, selected_features, normalize_data=False)
-        plot_feature_spread(df_feature, palette=color, png_dir=png_dir)
+        df_feature = create_feature_df(df_consolidated, observations,
+                                       selected_features, normalize_data=False)
+        plot_feature_spread(df_feature, palette=color, png_dir=png_dir,
+                            show_plot=show_plot)
 
 
-def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame, features, normalize_data=True):
-    """Creating a merged df to compare baseline and values based on features"""
+def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame,
+                      features: List[str], normalize_data=True) -> pd.DataFrame:
+    """
+    Creating a merged df to compare baseline and values based on features
+    Args:
+        df_consolidated: dataframe with a sample of the training or consolidated data
+        df_flight: dataframe of a specific flight
+        features: list of features
+        normalize_data: whether to normalize the data
+    Returns:
+        A dataframe containing each feature with value and baseline.
+    """
     df_baseline = df_consolidated[features].sample(n=min(200000, len(df_consolidated)))
 
     df_flight = df_flight[features].copy()
@@ -70,7 +91,7 @@ def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame, fe
     return pd.concat(feature_dfs, axis=0, ignore_index=True)
 
 
-def plot_feature_spread(df_feature, palette="Greens", png_dir=None):
+def plot_feature_spread(df_feature, palette="Greens", png_dir=None, show_plot=True):
     """Plots a boxplot for each feature in a flight."""
     nfeatures = len(df_feature["feature_name"].unique())
     _ = plt.figure(figsize=(20, nfeatures))
@@ -97,13 +118,13 @@ def plot_feature_spread(df_feature, palette="Greens", png_dir=None):
         file_name = f'%s_Feature_spread.png' % df_feature['feature_name'][0]
         plt.savefig(os.path.join(png_dir, file_name),
                     dpi=300, bbox_inches='tight')
-
-    plt.show()
+    if show_plot:
+        plt.show()
 
 
 def plot_attribution(
         df_attribution: pd.DataFrame, anomaly_score: float, engine_sn,
-        flight_sn, timestamp, png_dir=None) -> None:
+        flight_sn, timestamp, png_dir=None, show_plot=True) -> None:
     """Plots the attribution as a pie chart.
 
     The center contains the anomaly score. The wedges are ordered clockwise
@@ -119,6 +140,8 @@ def plot_attribution(
         flight_sn: flight serial number
         timestamp: timestamp of the observed point
         png_dir: optional directory to save the pie chart as a png file
+        show_plot: whether to display plots
+    Returns: None
     """
     df_attribution = df_attribution.sort_values(by="attribution", ascending=False)
     norm = plt.Normalize()
@@ -195,11 +218,12 @@ def plot_attribution(
             engine_sn, flight_sn, timestamp)
         plt.savefig(os.path.join(png_dir, file_name),
                     dpi=300, bbox_inches='tight')
+    if show_plot:
+        plt.show()
 
-    plt.show()
 
-
-def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array) -> None:
+def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array,
+                         show_plot=True) -> None:
     """Plots the gradient for each feature from baseline to target point."""
     fig, ax = plt.subplots()
     fig.set_figheight(12)
@@ -241,8 +265,9 @@ def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array) -> None:
         ax.spines[sp].set_color("black")
     ax.set_facecolor("white")
 
-    plt.grid(True)
-    plt.show()
+    if show_plot:
+        plt.show()
+        plt.grid(True)
 
 
 def get_single_ad_timeseries(ad, observations: pd.DataFrame) -> pd.DataFrame:
@@ -258,7 +283,7 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
                              predictions: Optional[pd.Series] = None,
                              anomaly_smoothing_kernel: int = 15,
                              timeseries_dir: str = None,
-                             ad_name: str = 'AD'):
+                             ad_name: str = 'AD', show_plot=True):
     """Plots each variable as a timeseries with anomaly detection score.
 
     Args:
@@ -269,7 +294,7 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
         anomaly_smoothing_kernel: window size to smooth the anomaly score.
         timeseries_dir: directory to save timeseries as a png
         ad_name: name of the AD
-
+        show_plot: whether to display plots
     """
     fig, ax = plt.subplots()
     ax2 = ax.twinx()
@@ -344,8 +369,8 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
         file_name = f"%s-%s_timeseries_plot.png" % (label, variable_name)
         plt.savefig(os.path.join(timeseries_dir, file_name),
                     dpi=300, bbox_inches='tight')
-
-    plt.show()
+    if show_plot:
+        plt.show()
 
 
 def plot_pair_plots(observations):
