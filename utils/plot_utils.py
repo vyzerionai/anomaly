@@ -151,8 +151,8 @@ def plot_attribution(
     for fn, row in df_attribution.iterrows():
         # Only show the dimensions with a blame > 5%.
         if row.attribution > 0.03:
-            if fn.endswith("oscillation"):
-                names.append("%s\n" % fn)
+            if row.expected_value == "":
+                names.append("%s\n%s" % (fn, row.observed_value))
             else:
                 names.append("%s\n%3.1f (%3.1f)" % (
                     fn, row.observed_value, row.expected_value))
