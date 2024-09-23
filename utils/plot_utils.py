@@ -151,9 +151,11 @@ def plot_attribution(
     for fn, row in df_attribution.iterrows():
         # Only show the dimensions with a blame > 5%.
         if row.attribution > 0.03:
-            names.append(
-                "%s\n%3.1f (%3.1f)" % (fn, row.observed_value, row.expected_value)
-            )
+            if fn.endswith("oscillation"):
+                names.append("%s\n" % fn)
+            else:
+                names.append("%s\n%3.1f (%3.1f)" % (
+                    fn, row.observed_value, row.expected_value))
             wedge_size = int(100 * row.attribution)
             sum_big += wedge_size
             sizes.append(wedge_size)
