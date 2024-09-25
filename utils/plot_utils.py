@@ -456,9 +456,9 @@ def plot_attribution_rankings(attribution_reference_ranking, attribution_predict
             face_color = (1,0,0,0)
         else:
             face_color = 'gray'
-            coord = 0.0,  (top_y - counter_y)/top_y * padding_factor
-            ax.text(coord[0], coord[1], name,
-                bbox={'facecolor': face_color, 'alpha': 0.4, 'pad': 3})
+        coord = 0.0,  (top_y - counter_y)/top_y * padding_factor
+        ax.text(coord[0], coord[1], name,
+            bbox={'facecolor': face_color, 'alpha': 0.4, 'pad': 3})
 
         if score > 0:
             ref_coords[name] = coord
