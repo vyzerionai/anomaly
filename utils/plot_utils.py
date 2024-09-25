@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from matplotlib.colors import LinearSegmentedColormap
 from typing import Optional, List
 from . import sample_utils
 
@@ -423,3 +424,83 @@ def plot_pair_plots(observations):
                 col.axis("off")
             cx = cx + 1
         rx = rx + 1
+
+
+def plot_attribution_rankings(attribution_reference_ranking, attribution_prediction_ranking, title = "Attribution Ranking"):
+
+    padding_factor = 1.0
+
+    n_color_steps = 20
+    min_val = 0.0
+    max_mal = attribution_prediction_ranking.max()
+    step = (max_mal - min_val) / n_color_steps
+    color_steps = np.arange(min_val, max_mal, step)
+    low_color = (0.8, 0.8, 0.8)
+    high_color = (1, 0, 0)
+
+    colors = [low_color, high_color]
+    cm = LinearSegmentedColormap.from_list( "Custom", colors, N=n_color_steps)
+
+    fig = plt.figure()
+    ax = fig.add_subplot()
+
+
+    top_y = len(attribution_prediction_ranking)
+
+    pred_coords = {}
+    ref_coords = {}
+
+    counter_y = 0
+    for name, score in attribution_reference_ranking[attribution_prediction_ranking.index].sort_values(ascending = False).items():
+        if score > 0:
+            face_color = (1,0,0,0)
+        else:
+            face_color = 'gray'
+            coord = 0.0,  (top_y - counter_y)/top_y * padding_factor
+            ax.text(coord[0], coord[1], name,
+                bbox={'facecolor': face_color, 'alpha': 0.4, 'pad': 3})
+
+        if score > 0:
+            ref_coords[name] = coord
+
+
+        counter_y += 1
+
+    ax.text(0.0, -0.05, 'Reference Attributions')
+
+    counter_y = 0
+    for name, score in attribution_prediction_ranking.sort_values(ascending = False).items():
+
+        color_idx = (np.abs(color_steps - score)).argmin()
+
+        coord = top_y/ 1.0,  (top_y - counter_y)/top_y * padding_factor
+        ax.text(coord[0], coord[1], name,
+            bbox={'facecolor': cm(color_idx), 'alpha': 0.4, 'pad': 3})
+
+        pred_coords[name] = coord
+
+        counter_y += 1
+
+    ax.text(top_y/ 1.0, -0.05, 'Predicted Attributions')
+
+    for name, start_coord in ref_coords.items():
+
+        if name not in pred_coords:
+          continue
+
+        end_coord = pred_coords[name]
+
+        x_offs =  len(name) * 0.8
+        x_end_offs = 0.6
+        y_offs = 0.01
+
+        ax.arrow(start_coord[0] + x_offs, start_coord[1] + y_offs,
+                 end_coord[0] - start_coord[0] - x_offs - x_end_offs,
+                 end_coord[1] - start_coord[1] + y_offs, head_width=0.01,
+                 head_length=0.5, fc='gray', ec='gray')
+
+    ax.set_axis_off()
+
+    plt.title(title)
+
+    plt.show()
