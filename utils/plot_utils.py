@@ -426,7 +426,7 @@ def plot_pair_plots(observations):
         rx = rx + 1
 
 
-def plot_attribution_rankings(attribution_reference_ranking, attribution_prediction_ranking, title = "Attribution Ranking"):
+def plot_attribution_rankings(attribution_reference_ranking, attribution_prediction_ranking, title = "Attribution Ranking", png_dir=None, show_plot=True):
 
     padding_factor = 1.0
 
@@ -503,4 +503,14 @@ def plot_attribution_rankings(attribution_reference_ranking, attribution_predict
 
     plt.title(title)
 
-    plt.show()
+    if png_dir is not None:
+        if not os.path.exists(png_dir):
+            os.makedirs(png_dir)
+        file_name = "_".join(title.split()).replace(".", '_')
+        plt.savefig(os.path.join(png_dir, file_name),
+                    dpi=300, bbox_inches='tight')
+
+    if show_plot:
+        plt.show()
+
+
