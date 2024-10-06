@@ -4,6 +4,7 @@ import collections
 import numpy as np
 import pandas as pd
 from keras.utils import to_categorical
+from absl import logging
 
 class Variable(object):
     def __init__(self, index, name, mean, std, min=None, max=None):
@@ -99,7 +100,7 @@ def get_normalization_info(df: pd.DataFrame) -> Dict[str, Variable]:
             raise ValueError("The feature column %s is not numeric." % column)
 
         if column.startswith("aux"):
-            print("Auxiliary column %s is not normalized." % column)
+            logging.info("Auxiliary column %s is not normalized." % column)
             vmean = 0.0
             vstd = 1.0
         else:

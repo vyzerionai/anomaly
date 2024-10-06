@@ -4,6 +4,7 @@ import numpy as np
 from typing import Sequence, Optional, Mapping, Dict
 from scipy import signal
 import collections
+from absl import logging
 
 
 class BaseAuxiliaryFeature(metaclass= abc.ABCMeta):
@@ -151,7 +152,7 @@ def apply_auxiliary_features(flights: Dict[tuple[str, str],
 
   for flight_key in flights:
     for auxf in auxiliary_features:
-      print('Adding auxiliary feature %s to flight %s' %(auxf, flight_key))
+      logging.info('Adding auxiliary feature %s to flight %s' %(auxf, flight_key))
       flight_file = flights[flight_key][0]
       flight_data = flights[flight_key][1]
       if len(flights[flight_key]) == 4:

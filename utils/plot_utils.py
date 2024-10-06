@@ -273,7 +273,7 @@ def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array,
         plt.grid(True)
 
 
-def get_single_ad_timeseries(ad, observations: pd.DataFrame) -> pd.DataFrame:
+def get_single_ad_timeseries(ad, observations: pd.DataFrame) -> pd.Series:
     """Returns the single timeseries of predictions."""
 
     if 'class_label' in observations.columns:
@@ -293,7 +293,7 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
         observations: Dataframe with columns as features.
         variable_name: Column name to plot (must be a col in the observations).
         label: Added to the title of the chart.
-        predictions: Data series containing the anomaly detector's predictions.
+        predictions: series containing the anomaly detector's predictions.
         anomaly_smoothing_kernel: window size to smooth the anomaly score.
         timeseries_dir: directory to save timeseries as a png
         ad_name: name of the AD
