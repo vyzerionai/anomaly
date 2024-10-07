@@ -10,10 +10,10 @@ from matplotlib.colors import LinearSegmentedColormap
 from typing import Optional, List
 from . import sample_utils
 
+
 def get_filtered_dir(subject):
-    words = subject.split()
-    cleaned_words = [re.sub(r'[^A-Za-z0-9_]', '', word) for word in words]
-    output = '_'.join(cleaned_words)
+    cleaned_subject = re.sub(r'[^A-Za-z0-9_]', ' ', subject)
+    output = '_'.join(cleaned_subject.split())
     return output
 
 def get_palettes(desired_len, palettes: List[str] = None):
