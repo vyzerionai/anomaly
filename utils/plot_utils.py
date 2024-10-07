@@ -1,5 +1,6 @@
 """Plotting utility for anomaly detection."""
 import os
+import re
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -9,6 +10,11 @@ from matplotlib.colors import LinearSegmentedColormap
 from typing import Optional, List
 from . import sample_utils
 
+def get_filtered_dir(subject):
+    words = subject.split()
+    cleaned_words = [re.sub(r'[^A-Za-z0-9_]', '', word) for word in words]
+    output = '_'.join(cleaned_words)
+    return output
 
 def get_palettes(desired_len, palettes: List[str] = None):
     """Return a set of palettes
@@ -117,6 +123,7 @@ def plot_feature_spread(df_feature, palette="Greens", png_dir=None, show_plot=Tr
 
         # Identifying the png by the first feature in the feature spread
         file_name = f'%s_Feature_spread.png' % df_feature['feature_name'][0]
+        file_name = get_filtered_dir(file_name)
         plt.savefig(os.path.join(png_dir, file_name),
                     dpi=300, bbox_inches='tight')
     if show_plot:
@@ -219,6 +226,7 @@ def plot_attribution(
             os.makedirs(png_dir)
         file_name = f"Engine_%s_Flight_%s_timestamp_%s_attribution_pie_chart.png" % (
             engine_sn, flight_sn, timestamp)
+        file_name = get_filtered_dir(file_name)
         plt.savefig(os.path.join(png_dir, file_name),
                     dpi=300, bbox_inches='tight')
     if show_plot:
@@ -370,6 +378,7 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
         if not os.path.exists(timeseries_dir):
             os.makedirs(timeseries_dir)
         file_name = f"%s-%s_timeseries_plot.png" % (label, variable_name)
+        file_name = get_filtered_dir(file_name)
         plt.savefig(os.path.join(timeseries_dir, file_name),
                     dpi=300, bbox_inches='tight')
     if show_plot:
@@ -507,6 +516,7 @@ def plot_attribution_rankings(attribution_reference_ranking, attribution_predict
         if not os.path.exists(png_dir):
             os.makedirs(png_dir)
         file_name = "_".join(title.split()).replace(".", '_')
+        file_name = get_filtered_dir(file_name)
         plt.savefig(os.path.join(png_dir, file_name),
                     dpi=300, bbox_inches='tight')
 
