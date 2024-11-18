@@ -16,6 +16,7 @@ def get_filtered_dir(subject):
     output = '_'.join(cleaned_subject.split())
     return output
 
+
 def get_palettes(desired_len, palettes: List[str] = None):
     """Return a set of palettes
     Args:
@@ -32,8 +33,10 @@ def get_palettes(desired_len, palettes: List[str] = None):
     current_len = len(palettes)
 
     if desired_len > current_len:
-        palettes.extend(np.random.choice(palettes, size=desired_len - current_len,
-                                         replace=True if (desired_len - current_len) > current_len else False))
+        palettes.extend(
+            np.random.choice(palettes, size=desired_len - current_len,
+                             replace=True if (
+                                                         desired_len - current_len) > current_len else False))
 
     return np.random.choice(palettes, desired_len, replace=False)
 
@@ -73,7 +76,8 @@ def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame,
     Returns:
         A dataframe containing each feature with value and baseline.
     """
-    df_baseline = df_consolidated[features].sample(n=min(200000, len(df_consolidated)))
+    df_baseline = df_consolidated[features].sample(
+        n=min(200000, len(df_consolidated)))
 
     df_flight = df_flight[features].copy()
 
@@ -98,7 +102,8 @@ def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame,
     return pd.concat(feature_dfs, axis=0, ignore_index=True)
 
 
-def plot_feature_spread(df_feature, palette="Greens", png_dir=None, show_plot=True):
+def plot_feature_spread(df_feature, palette="Greens", png_dir=None,
+                        show_plot=True):
     """Plots a boxplot for each feature in a flight."""
     nfeatures = len(df_feature["feature_name"].unique())
     _ = plt.figure(figsize=(20, nfeatures))
@@ -128,6 +133,10 @@ def plot_feature_spread(df_feature, palette="Greens", png_dir=None, show_plot=Tr
                     dpi=300, bbox_inches='tight')
     if show_plot:
         plt.show()
+    else:
+        plt.cla()
+        plt.clf()
+        plt.close('all')
 
 
 def plot_attribution(
@@ -151,7 +160,8 @@ def plot_attribution(
         show_plot: whether to display plots
     Returns: None
     """
-    df_attribution = df_attribution.sort_values(by="attribution", ascending=False)
+    df_attribution = df_attribution.sort_values(by="attribution",
+                                                ascending=False)
     norm = plt.Normalize()
     names = []
     sizes = []
@@ -176,7 +186,8 @@ def plot_attribution(
     my_circle = plt.Circle(
         (0, 0),
         0.45,
-        facecolor=plt.cm.RdYlGn(norm(range(num_p_score_steps + 1)))[center_color_index],
+        facecolor=plt.cm.RdYlGn(norm(range(num_p_score_steps + 1)))[
+            center_color_index],
         edgecolor="white",
         linewidth=3,
     )
@@ -231,6 +242,10 @@ def plot_attribution(
                     dpi=300, bbox_inches='tight')
     if show_plot:
         plt.show()
+    else:
+        plt.cla()
+        plt.clf()
+        plt.close('all')
 
 
 def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array,
@@ -243,7 +258,8 @@ def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array,
     colors = sns.color_palette("rainbow", df_grad.shape[1])
     for ix, field_name in enumerate(df_grad):
         series_color = colors[ix]
-        ig_series = (df_grad[field_name].cumsum() / float(n_points)) * delta[field_name]
+        ig_series = (df_grad[field_name].cumsum() / float(n_points)) * delta[
+            field_name]
         ax.plot(
             df_grad.index,
             ig_series,
@@ -279,6 +295,10 @@ def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array,
     if show_plot:
         plt.show()
         plt.grid(True)
+    else:
+        plt.cla()
+        plt.clf()
+        plt.close('all')
 
 
 def get_single_ad_timeseries(ad, observations: pd.DataFrame) -> pd.Series:
@@ -383,6 +403,10 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
                     dpi=300, bbox_inches='tight')
     if show_plot:
         plt.show()
+    else:
+        plt.cla()
+        plt.clf()
+        plt.close('all')
 
 
 def plot_pair_plots(observations):
@@ -435,8 +459,10 @@ def plot_pair_plots(observations):
         rx = rx + 1
 
 
-def plot_attribution_rankings(attribution_reference_ranking, attribution_prediction_ranking, title = "Attribution Ranking", png_dir=None, show_plot=True):
-
+def plot_attribution_rankings(attribution_reference_ranking,
+                              attribution_prediction_ranking,
+                              title="Attribution Ranking", png_dir=None,
+                              show_plot=True):
     padding_factor = 1.0
 
     n_color_steps = 20
@@ -448,11 +474,10 @@ def plot_attribution_rankings(attribution_reference_ranking, attribution_predict
     high_color = (1, 0, 0)
 
     colors = [low_color, high_color]
-    cm = LinearSegmentedColormap.from_list( "Custom", colors, N=n_color_steps)
+    cm = LinearSegmentedColormap.from_list("Custom", colors, N=n_color_steps)
 
     fig = plt.figure()
     ax = fig.add_subplot()
-
 
     top_y = len(attribution_prediction_ranking)
 
@@ -460,46 +485,47 @@ def plot_attribution_rankings(attribution_reference_ranking, attribution_predict
     ref_coords = {}
 
     counter_y = 0
-    for name, score in attribution_reference_ranking[attribution_prediction_ranking.index].sort_values(ascending = False).items():
+    for name, score in attribution_reference_ranking[
+        attribution_prediction_ranking.index].sort_values(
+            ascending=False).items():
         if score > 0:
-            face_color = (1,0,0,0)
+            face_color = (1, 0, 0, 0)
         else:
             face_color = 'gray'
-        coord = 0.0,  (top_y - counter_y)/top_y * padding_factor
+        coord = 0.0, (top_y - counter_y) / top_y * padding_factor
         ax.text(coord[0], coord[1], name,
-            bbox={'facecolor': face_color, 'alpha': 0.4, 'pad': 3})
+                bbox={'facecolor': face_color, 'alpha': 0.4, 'pad': 3})
 
         if score > 0:
             ref_coords[name] = coord
-
 
         counter_y += 1
 
     ax.text(0.0, -0.05, 'Reference Attributions')
 
     counter_y = 0
-    for name, score in attribution_prediction_ranking.sort_values(ascending = False).items():
-
+    for name, score in attribution_prediction_ranking.sort_values(
+            ascending=False).items():
         color_idx = (np.abs(color_steps - score)).argmin()
 
-        coord = top_y/ 1.0,  (top_y - counter_y)/top_y * padding_factor
+        coord = top_y / 1.0, (top_y - counter_y) / top_y * padding_factor
         ax.text(coord[0], coord[1], name,
-            bbox={'facecolor': cm(color_idx), 'alpha': 0.4, 'pad': 3})
+                bbox={'facecolor': cm(color_idx), 'alpha': 0.4, 'pad': 3})
 
         pred_coords[name] = coord
 
         counter_y += 1
 
-    ax.text(top_y/ 1.0, -0.05, 'Predicted Attributions')
+    ax.text(top_y / 1.0, -0.05, 'Predicted Attributions')
 
     for name, start_coord in ref_coords.items():
 
         if name not in pred_coords:
-          continue
+            continue
 
         end_coord = pred_coords[name]
 
-        x_offs =  len(name) * 0.8
+        x_offs = len(name) * 0.8
         x_end_offs = 0.6
         y_offs = 0.01
 
@@ -522,5 +548,7 @@ def plot_attribution_rankings(attribution_reference_ranking, attribution_predict
 
     if show_plot:
         plt.show()
-
-
+    else:
+        plt.cla()
+        plt.clf()
+        plt.close('all')
