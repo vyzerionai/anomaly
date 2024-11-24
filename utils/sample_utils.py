@@ -3,8 +3,11 @@ from typing import Dict, List, Sequence, Mapping
 import collections
 import numpy as np
 import pandas as pd
+import tensorflow as tf
+
 from keras.utils import to_categorical
 from absl import logging
+
 
 class Variable(object):
     def __init__(self, index, name, mean, std, min=None, max=None):
@@ -112,6 +115,42 @@ def get_normalization_info(df: pd.DataFrame) -> Dict[str, Variable]:
         )
         variables[column] = variable
     return variables
+
+
+def write_normalization_info(normalization_info: Dict[str, Variable],
+                             filename: str):
+  """Writes variable normalization info to CSV."""
+
+  def to_df(normalization_info):
+    df = pd.DataFrame(columns=["index", "mean", "std"])
+    for variable in normalization_info:
+      df.loc[variable] = [
+          normalization_info[variable].index, normalization_info[variable].mean,
+          normalization_info[variable].std
+      ]
+    return df
+
+  with tf.io.gfile.GFile(filename, "w") as csv_file:
+    to_df(normalization_info).to_csv(csv_file, sep="\t")
+
+
+def read_normalization_info(
+    filename: str) -> Dict[str, Variable]:
+  """Reads variable normalization info from CSV."""
+
+  def from_df(df):
+    normalization_info = {}
+    for name, row in df.iterrows():
+      normalization_info[name] = Variable(
+          row["index"], name, row["mean"], row["std"])
+    return normalization_info
+
+  if not tf.io.gfile.exists(filename):
+    raise AssertionError("{} does not exist".format(filename))
+  with tf.io.gfile.GFile(filename, "r") as csv_file:
+    df = pd.read_csv(csv_file, header=0, index_col=0, sep="\t")
+    normalization_info = from_df(df)
+  return normalization_info
 
 
 def get_column_order(normalization_info: Dict[str, Variable]) -> List[str]:
