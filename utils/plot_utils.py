@@ -35,15 +35,14 @@ def get_palettes(desired_len, palettes: List[str] = None):
     if desired_len > current_len:
         palettes.extend(
             np.random.choice(palettes, size=desired_len - current_len,
-                             replace=True if (
-                                                         desired_len - current_len) > current_len else False))
+                             replace=True if (desired_len - current_len) > current_len else False))
 
     return np.random.choice(palettes, desired_len, replace=False)
 
 
 def plot_all_feature_spreads(feature_lists, df_consolidated: pd.DataFrame,
                              observations: pd.DataFrame, palettes=None,
-                             png_dir=None, show_plot=True):
+                             png_dir=None, subject=None, show_plot=True):
     """
     Create boxplots of features that are aggregated together
     Args:
@@ -52,6 +51,7 @@ def plot_all_feature_spreads(feature_lists, df_consolidated: pd.DataFrame,
         observations: dataframe of the observations from the selected flight
         palettes: optional set of palettes to plot the different feature plots
         png_dir: optional directory to save all the feature spreads as png
+        subject: name of the flight to include in png name
         show_plot: option of whether or not to display the plots generated
     Returns: None
     """
@@ -61,7 +61,7 @@ def plot_all_feature_spreads(feature_lists, df_consolidated: pd.DataFrame,
         df_feature = create_feature_df(df_consolidated, observations,
                                        selected_features, normalize_data=False)
         plot_feature_spread(df_feature, palette=color, png_dir=png_dir,
-                            show_plot=show_plot)
+                            subject=subject, show_plot=show_plot)
 
 
 def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame,
