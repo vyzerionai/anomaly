@@ -103,7 +103,7 @@ def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame,
 
 
 def plot_feature_spread(df_feature, palette="Greens", png_dir=None,
-                        show_plot=True):
+                        subject=None, show_plot=True):
     """Plots a boxplot for each feature in a flight."""
     nfeatures = len(df_feature["feature_name"].unique())
     _ = plt.figure(figsize=(20, nfeatures))
@@ -128,6 +128,8 @@ def plot_feature_spread(df_feature, palette="Greens", png_dir=None,
 
         # Identifying the png by the first feature in the feature spread
         file_name = f'%s_Feature_spread.png' % df_feature['feature_name'][0]
+        if subject:
+            file_name = '%s_%s' %(subject, file_name)
         file_name = get_filtered_dir(file_name)
         plt.savefig(os.path.join(png_dir, file_name),
                     dpi=300, bbox_inches='tight')
