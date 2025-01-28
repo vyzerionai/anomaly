@@ -123,8 +123,7 @@ def plot_feature_spread(df_feature, palette="Greens", png_dir=None,
 
     # Saving as png
     if png_dir is not None:
-        if not os.path.exists(png_dir):
-            os.makedirs(png_dir)
+        os.makedirs(png_dir, exist_ok=True)
 
         # Identifying the png by the first feature in the feature spread
         file_name = f'%s_Feature_spread.png' % df_feature['feature_name'][0]
@@ -235,8 +234,7 @@ def plot_attribution(
     p.gca().add_artist(my_circle)
 
     if png_dir is not None:
-        if not os.path.exists(png_dir):
-            os.makedirs(png_dir)
+        os.makedirs(png_dir, exist_ok=True)
         file_name = f"Engine_%s_Flight_%s_timestamp_%s_attribution_pie_chart.png" % (
             engine_sn, flight_sn, timestamp)
         file_name = get_filtered_dir(file_name)
@@ -397,8 +395,7 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
     plt.grid(True)
 
     if timeseries_dir is not None:
-        if not os.path.exists(timeseries_dir):
-            os.makedirs(timeseries_dir)
+        os.makedirs(timeseries_dir, exist_ok=True)
         file_name = f"%s-%s_timeseries_plot.png" % (label, variable_name)
         file_name = get_filtered_dir(file_name)
         plt.savefig(os.path.join(timeseries_dir, file_name),
@@ -541,8 +538,7 @@ def plot_attribution_rankings(attribution_reference_ranking,
     plt.title(title)
 
     if png_dir is not None:
-        if not os.path.exists(png_dir):
-            os.makedirs(png_dir)
+        os.makedirs(png_dir, exist_ok=True)
         file_name = "_".join(title.split()).replace(".", '_')
         file_name = get_filtered_dir(file_name)
         plt.savefig(os.path.join(png_dir, file_name),
