@@ -1,0 +1,6 @@
+# Environments
+.idea/
+.venv/
+
+# OS generated files
+.DS_Store
