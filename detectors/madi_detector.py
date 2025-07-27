@@ -9,7 +9,7 @@ _MODEL_FILENAME = 'model-multivariate-ad.keras'
 _NORMALIZATION_FILENAME = 'normalization_info'
 
 
-class MadiDectector:
+class MadiDetector:
     """Anomaly detection using negative sampling and a neural net classifier."""
     def __init__(self):
         self._normalization_info = None
