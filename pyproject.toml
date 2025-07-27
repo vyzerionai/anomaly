@@ -1,3 +1,31 @@
 [build-system]
-requires = ["setuptools>=40.8.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "anomaly"
+version = "0.1.0"
+description = "Anomaly Detection"
+readme = "README.md"
+requires_python = ">=3.9"
+license = { text = "Apache-2.0" }
+
+authors = [
+  { name = "John Sipple", email = "sipplej@gmail.com" },
+  { name = "Catherine Nguyen", email = "catherinehnguyen15@gmail.com"},
+]
+
+dependencies = [
+  "setuptools >= 40.2.0",
+  "importlib_resources; python_version<'3.7'",
+  "numpy >= 1.16.0",
+  "scipy >= 1.2.1",
+  "tensorflow >= 2.16.1, <=2.19.0",
+  "types-tensorflow >= 2.18",
+  "typing_extensions; python_version<'3.8'",
+  "pandas >= 0.24.2",
+  "seaborn >= 0.11.0"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["anomaly"]
