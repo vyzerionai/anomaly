@@ -1,4 +1,5 @@
 """Utilities to to generate or modify data samples."""
+
 from typing import Dict, List, Sequence, Mapping
 import collections
 import numpy as np
@@ -56,7 +57,6 @@ def sample_categorical(
     columns = ["aux_cat_%s_%s" % (cat_name, cat[0]) for cat in class_counts]
 
     return pd.DataFrame(one_hot, columns=columns)
-
 
 
 def get_minmax_normalization_info(df: pd.DataFrame) -> Dict[str, Variable]:
@@ -117,40 +117,40 @@ def get_normalization_info(df: pd.DataFrame) -> Dict[str, Variable]:
     return variables
 
 
-def write_normalization_info(normalization_info: Dict[str, Variable],
-                             filename: str):
-  """Writes variable normalization info to CSV."""
+def write_normalization_info(normalization_info: Dict[str, Variable], filename: str):
+    """Writes variable normalization info to CSV."""
 
-  def to_df(normalization_info):
-    df = pd.DataFrame(columns=["index", "mean", "std"])
-    for variable in normalization_info:
-      df.loc[variable] = [
-          normalization_info[variable].index, normalization_info[variable].mean,
-          normalization_info[variable].std
-      ]
-    return df
+    def to_df(normalization_info):
+        df = pd.DataFrame(columns=["index", "mean", "std"])
+        for variable in normalization_info:
+            df.loc[variable] = [
+                normalization_info[variable].index,
+                normalization_info[variable].mean,
+                normalization_info[variable].std,
+            ]
+        return df
 
-  with tf.io.gfile.GFile(filename, "w") as csv_file:
-    to_df(normalization_info).to_csv(csv_file, sep="\t")
+    with tf.io.gfile.GFile(filename, "w") as csv_file:
+        to_df(normalization_info).to_csv(csv_file, sep="\t")
 
 
-def read_normalization_info(
-    filename: str) -> Dict[str, Variable]:
-  """Reads variable normalization info from CSV."""
+def read_normalization_info(filename: str) -> Dict[str, Variable]:
+    """Reads variable normalization info from CSV."""
 
-  def from_df(df):
-    normalization_info = {}
-    for name, row in df.iterrows():
-      normalization_info[name] = Variable(
-          row["index"], name, row["mean"], row["std"])
+    def from_df(df):
+        normalization_info = {}
+        for name, row in df.iterrows():
+            normalization_info[name] = Variable(
+                row["index"], name, row["mean"], row["std"]
+            )
+        return normalization_info
+
+    if not tf.io.gfile.exists(filename):
+        raise AssertionError("{} does not exist".format(filename))
+    with tf.io.gfile.GFile(filename, "r") as csv_file:
+        df = pd.read_csv(csv_file, header=0, index_col=0, sep="\t")
+        normalization_info = from_df(df)
     return normalization_info
-
-  if not tf.io.gfile.exists(filename):
-    raise AssertionError("{} does not exist".format(filename))
-  with tf.io.gfile.GFile(filename, "r") as csv_file:
-    df = pd.read_csv(csv_file, header=0, index_col=0, sep="\t")
-    normalization_info = from_df(df)
-  return normalization_info
 
 
 def get_column_order(normalization_info: Dict[str, Variable]) -> List[str]:
@@ -243,10 +243,12 @@ def denormalize(
     return pd.concat([df, df_norm[not_norm_cols]], axis=1)
 
 
-def get_neg_sample(pos_sample: pd.DataFrame,
-                   n_points: int,
-                   do_permute: bool = False,
-                   delta: float = 0.0) -> pd.DataFrame:
+def get_neg_sample(
+    pos_sample: pd.DataFrame,
+    n_points: int,
+    do_permute: bool = False,
+    delta: float = 0.0,
+) -> pd.DataFrame:
     """Creates a negative sample from the cuboid bounded by +/- delta.
 
     Where, [min - delta, max + delta] for each of the dimensions.
@@ -319,10 +321,12 @@ def get_neg_sample(pos_sample: pd.DataFrame,
     return df_neg[pos_sample.columns]
 
 
-def apply_negative_sample(positive_sample: pd.DataFrame,
-                          sample_ratio: float,
-                          sample_delta: float,
-                          do_permute=False) -> pd.DataFrame:
+def apply_negative_sample(
+    positive_sample: pd.DataFrame,
+    sample_ratio: float,
+    sample_delta: float,
+    do_permute=False,
+) -> pd.DataFrame:
     """Returns a dataset with negative and positive sample.
 
     Args:
@@ -338,7 +342,9 @@ def apply_negative_sample(positive_sample: pd.DataFrame,
     n_neg_points = int(len(positive_sample) * sample_ratio)
 
     negative_sample = get_neg_sample(
-        positive_sample, n_neg_points, do_permute=do_permute, delta=sample_delta)
+        positive_sample, n_neg_points, do_permute=do_permute, delta=sample_delta
+    )
     training_sample = pd.concat(
-        [positive_sample, negative_sample], ignore_index=True, sort=True)
+        [positive_sample, negative_sample], ignore_index=True, sort=True
+    )
     return training_sample.reindex(np.random.permutation(training_sample.index))

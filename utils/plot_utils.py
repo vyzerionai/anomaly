@@ -1,4 +1,5 @@
 """Plotting utility for anomaly detection."""
+
 import os
 import re
 import seaborn as sns
@@ -12,8 +13,8 @@ from . import sample_utils
 
 
 def get_filtered_dir(subject):
-    cleaned_subject = re.sub(r'[^A-Za-z0-9_]', ' ', subject)
-    output = '_'.join(cleaned_subject.split())
+    cleaned_subject = re.sub(r"[^A-Za-z0-9_]", " ", subject)
+    output = "_".join(cleaned_subject.split())
     return output
 
 
@@ -27,22 +28,41 @@ def get_palettes(desired_len, palettes: List[str] = None):
         An array of palettes for plotting
     """
     if palettes is None:
-        palettes = ['PuBu', 'Reds', 'Greens', 'Blues', 'Oranges', 'PuRd',
-                    'Wistia', 'Purples', 'pink_r', ]
+        palettes = [
+            "PuBu",
+            "Reds",
+            "Greens",
+            "Blues",
+            "Oranges",
+            "PuRd",
+            "Wistia",
+            "Purples",
+            "pink_r",
+        ]
 
     current_len = len(palettes)
 
     if desired_len > current_len:
         palettes.extend(
-            np.random.choice(palettes, size=desired_len - current_len,
-                             replace=True if (desired_len - current_len) > current_len else False))
+            np.random.choice(
+                palettes,
+                size=desired_len - current_len,
+                replace=True if (desired_len - current_len) > current_len else False,
+            )
+        )
 
     return np.random.choice(palettes, desired_len, replace=False)
 
 
-def plot_all_feature_spreads(feature_lists, df_consolidated: pd.DataFrame,
-                             observations: pd.DataFrame, palettes=None,
-                             png_dir=None, subject=None, show_plot=True):
+def plot_all_feature_spreads(
+    feature_lists,
+    df_consolidated: pd.DataFrame,
+    observations: pd.DataFrame,
+    palettes=None,
+    png_dir=None,
+    subject=None,
+    show_plot=True,
+):
     """
     Create boxplots of features that are aggregated together
     Args:
@@ -58,14 +78,24 @@ def plot_all_feature_spreads(feature_lists, df_consolidated: pd.DataFrame,
     palettes = get_palettes(len(feature_lists), palettes)
 
     for color, selected_features in zip(palettes, feature_lists):
-        df_feature = create_feature_df(df_consolidated, observations,
-                                       selected_features, normalize_data=False)
-        plot_feature_spread(df_feature, palette=color, png_dir=png_dir,
-                            subject=subject, show_plot=show_plot)
+        df_feature = create_feature_df(
+            df_consolidated, observations, selected_features, normalize_data=False
+        )
+        plot_feature_spread(
+            df_feature,
+            palette=color,
+            png_dir=png_dir,
+            subject=subject,
+            show_plot=show_plot,
+        )
 
 
-def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame,
-                      features: List[str], normalize_data=True) -> pd.DataFrame:
+def create_feature_df(
+    df_consolidated: pd.DataFrame,
+    df_flight: pd.DataFrame,
+    features: List[str],
+    normalize_data=True,
+) -> pd.DataFrame:
     """
     Creating a merged df to compare baseline and values based on features
     Args:
@@ -76,8 +106,7 @@ def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame,
     Returns:
         A dataframe containing each feature with value and baseline.
     """
-    df_baseline = df_consolidated[features].sample(
-        n=min(200000, len(df_consolidated)))
+    df_baseline = df_consolidated[features].sample(n=min(200000, len(df_consolidated)))
 
     df_flight = df_flight[features].copy()
 
@@ -87,23 +116,24 @@ def create_feature_df(df_consolidated: pd.DataFrame, df_flight: pd.DataFrame,
         df_baseline = sample_utils.normalize(df_baseline, normalization_data)
         df_flight = sample_utils.normalize(df_flight, normalization_data)
 
-    df_baseline['baseline'] = 'baseline'
-    df_flight['baseline'] = 'flight'
+    df_baseline["baseline"] = "baseline"
+    df_flight["baseline"] = "flight"
 
     df_merged = pd.concat([df_baseline, df_flight], axis=0)
 
     feature_dfs = []
     for feature in features:
-        feature_df = df_merged[[feature, 'baseline']].copy()
-        feature_df['feature'] = feature
-        feature_df.columns = ['feature_value', 'is_baseline', 'feature_name']
+        feature_df = df_merged[[feature, "baseline"]].copy()
+        feature_df["feature"] = feature
+        feature_df.columns = ["feature_value", "is_baseline", "feature_name"]
         feature_dfs.append(feature_df)
 
     return pd.concat(feature_dfs, axis=0, ignore_index=True)
 
 
-def plot_feature_spread(df_feature, palette="Greens", png_dir=None,
-                        subject=None, show_plot=True):
+def plot_feature_spread(
+    df_feature, palette="Greens", png_dir=None, subject=None, show_plot=True
+):
     """Plots a boxplot for each feature in a flight."""
     nfeatures = len(df_feature["feature_name"].unique())
     _ = plt.figure(figsize=(20, nfeatures))
@@ -126,23 +156,28 @@ def plot_feature_spread(df_feature, palette="Greens", png_dir=None,
         os.makedirs(png_dir, exist_ok=True)
 
         # Identifying the png by the first feature in the feature spread
-        file_name = f'%s_Feature_spread.png' % df_feature['feature_name'][0]
+        file_name = "%s_Feature_spread.png" % df_feature["feature_name"][0]
         if subject:
-            file_name = '%s_%s' %(subject, file_name)
+            file_name = "%s_%s" % (subject, file_name)
         file_name = get_filtered_dir(file_name)
-        plt.savefig(os.path.join(png_dir, file_name),
-                    dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(png_dir, file_name), dpi=300, bbox_inches="tight")
     if show_plot:
         plt.show()
     else:
         plt.cla()
         plt.clf()
-        plt.close('all')
+        plt.close("all")
 
 
 def plot_attribution(
-        df_attribution: pd.DataFrame, anomaly_score: float, engine_sn,
-        flight_sn, timestamp, png_dir=None, show_plot=True) -> None:
+    df_attribution: pd.DataFrame,
+    anomaly_score: float,
+    engine_sn,
+    flight_sn,
+    timestamp,
+    png_dir=None,
+    show_plot=True,
+) -> None:
     """Plots the attribution as a pie chart.
 
     The center contains the anomaly score. The wedges are ordered clockwise
@@ -161,8 +196,7 @@ def plot_attribution(
         show_plot: whether to display plots
     Returns: None
     """
-    df_attribution = df_attribution.sort_values(by="attribution",
-                                                ascending=False)
+    df_attribution = df_attribution.sort_values(by="attribution", ascending=False)
     norm = plt.Normalize()
     names = []
     sizes = []
@@ -173,8 +207,9 @@ def plot_attribution(
             if row.expected_value == "":
                 names.append("%s\n%s" % (fn, row.observed_value))
             else:
-                names.append("%s\n%3.1f (%3.1f)" % (
-                    fn, row.observed_value, row.expected_value))
+                names.append(
+                    "%s\n%3.1f (%3.1f)" % (fn, row.observed_value, row.expected_value)
+                )
             wedge_size = int(100 * row.attribution)
             sum_big += wedge_size
             sizes.append(wedge_size)
@@ -187,8 +222,7 @@ def plot_attribution(
     my_circle = plt.Circle(
         (0, 0),
         0.45,
-        facecolor=plt.cm.RdYlGn(norm(range(num_p_score_steps + 1)))[
-            center_color_index],
+        facecolor=plt.cm.RdYlGn(norm(range(num_p_score_steps + 1)))[center_color_index],
         edgecolor="white",
         linewidth=3,
     )
@@ -235,21 +269,24 @@ def plot_attribution(
 
     if png_dir is not None:
         os.makedirs(png_dir, exist_ok=True)
-        file_name = f"Engine_%s_Flight_%s_timestamp_%s_attribution_pie_chart.png" % (
-            engine_sn, flight_sn, timestamp)
+        file_name = "Engine_%s_Flight_%s_timestamp_%s_attribution_pie_chart.png" % (
+            engine_sn,
+            flight_sn,
+            timestamp,
+        )
         file_name = get_filtered_dir(file_name)
-        plt.savefig(os.path.join(png_dir, file_name),
-                    dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(png_dir, file_name), dpi=300, bbox_inches="tight")
     if show_plot:
         plt.show()
     else:
         plt.cla()
         plt.clf()
-        plt.close('all')
+        plt.close("all")
 
 
-def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array,
-                         show_plot=True) -> None:
+def plot_gradient_series(
+    df_grad: pd.DataFrame, delta: np.array, show_plot=True
+) -> None:
     """Plots the gradient for each feature from baseline to target point."""
     fig, ax = plt.subplots()
     fig.set_figheight(12)
@@ -258,8 +295,7 @@ def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array,
     colors = sns.color_palette("rainbow", df_grad.shape[1])
     for ix, field_name in enumerate(df_grad):
         series_color = colors[ix]
-        ig_series = (df_grad[field_name].cumsum() / float(n_points)) * delta[
-            field_name]
+        ig_series = (df_grad[field_name].cumsum() / float(n_points)) * delta[field_name]
         ax.plot(
             df_grad.index,
             ig_series,
@@ -282,9 +318,9 @@ def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array,
     plt.ylabel("Cumulative Gradients")
 
     for item in (
-            [ax.title, ax.xaxis.label, ax.yaxis.label]
-            + ax.get_xticklabels()
-            + ax.get_yticklabels()
+        [ax.title, ax.xaxis.label, ax.yaxis.label]
+        + ax.get_xticklabels()
+        + ax.get_yticklabels()
     ):
         item.set_fontsize(24)
 
@@ -298,23 +334,27 @@ def plot_gradient_series(df_grad: pd.DataFrame, delta: np.array,
     else:
         plt.cla()
         plt.clf()
-        plt.close('all')
+        plt.close("all")
 
 
 def get_single_ad_timeseries(ad, observations: pd.DataFrame) -> pd.Series:
     """Returns the single timeseries of predictions."""
 
-    if 'class_label' in observations.columns:
-        observations = observations.drop(columns=['class_label'])
-    return ad.predict(observations)['class_prob']
+    if "class_label" in observations.columns:
+        observations = observations.drop(columns=["class_label"])
+    return ad.predict(observations)["class_prob"]
 
 
-def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
-                             label: str,
-                             predictions: Optional[pd.Series] = None,
-                             anomaly_smoothing_kernel: int = 15,
-                             timeseries_dir: str = None,
-                             ad_name: str = 'AD', show_plot=True):
+def plot_variable_timeseries(
+    observations: pd.DataFrame,
+    variable_name: str,
+    label: str,
+    predictions: Optional[pd.Series] = None,
+    anomaly_smoothing_kernel: int = 15,
+    timeseries_dir: str = None,
+    ad_name: str = "AD",
+    show_plot=True,
+):
     """Plots each variable as a timeseries with anomaly detection score.
 
     Args:
@@ -352,18 +392,24 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
         color="green",
     )
 
-    if 'class_label' in observations.columns:
-        anomalous_observations = observations[observations['class_label'] == 0]
+    if "class_label" in observations.columns:
+        anomalous_observations = observations[observations["class_label"] == 0]
         anomalous_timestamps = [ii[2] for ii in anomalous_observations.index]
 
-        ax.plot(anomalous_timestamps, anomalous_observations[variable_name],
-                label=variable_name, linewidth=1.0, marker='.', color='red')
+        ax.plot(
+            anomalous_timestamps,
+            anomalous_observations[variable_name],
+            label=variable_name,
+            linewidth=1.0,
+            marker=".",
+            color="red",
+        )
 
-    if 'class_prob' in observations.columns or predictions is not None:
+    if "class_prob" in observations.columns or predictions is not None:
         if predictions is not None:
             ad_predictions = predictions
         else:
-            ad_predictions = observations['class_prob']
+            ad_predictions = observations["class_prob"]
         ad_predictions = 1 - ad_predictions
 
         kernel_size = anomaly_smoothing_kernel
@@ -396,16 +442,17 @@ def plot_variable_timeseries(observations: pd.DataFrame, variable_name: str,
 
     if timeseries_dir is not None:
         os.makedirs(timeseries_dir, exist_ok=True)
-        file_name = f"%s-%s_timeseries_plot.png" % (label, variable_name)
+        file_name = "%s-%s_timeseries_plot.png" % (label, variable_name)
         file_name = get_filtered_dir(file_name)
-        plt.savefig(os.path.join(timeseries_dir, file_name),
-                    dpi=300, bbox_inches='tight')
+        plt.savefig(
+            os.path.join(timeseries_dir, file_name), dpi=300, bbox_inches="tight"
+        )
     if show_plot:
         plt.show()
     else:
         plt.cla()
         plt.clf()
-        plt.close('all')
+        plt.close("all")
 
 
 def plot_pair_plots(observations):
@@ -458,10 +505,13 @@ def plot_pair_plots(observations):
         rx = rx + 1
 
 
-def plot_attribution_rankings(attribution_reference_ranking,
-                              attribution_prediction_ranking,
-                              title="Attribution Ranking", png_dir=None,
-                              show_plot=True):
+def plot_attribution_rankings(
+    attribution_reference_ranking,
+    attribution_prediction_ranking,
+    title="Attribution Ranking",
+    png_dir=None,
+    show_plot=True,
+):
     padding_factor = 1.0
 
     n_color_steps = 20
@@ -484,41 +534,51 @@ def plot_attribution_rankings(attribution_reference_ranking,
     ref_coords = {}
 
     counter_y = 0
-    for name, score in attribution_reference_ranking[
-        attribution_prediction_ranking.index].sort_values(
-            ascending=False).items():
+    for name, score in (
+        attribution_reference_ranking[attribution_prediction_ranking.index]
+        .sort_values(ascending=False)
+        .items()
+    ):
         if score > 0:
             face_color = (1, 0, 0, 0)
         else:
-            face_color = 'gray'
+            face_color = "gray"
         coord = 0.0, (top_y - counter_y) / top_y * padding_factor
-        ax.text(coord[0], coord[1], name,
-                bbox={'facecolor': face_color, 'alpha': 0.4, 'pad': 3})
+        ax.text(
+            coord[0],
+            coord[1],
+            name,
+            bbox={"facecolor": face_color, "alpha": 0.4, "pad": 3},
+        )
 
         if score > 0:
             ref_coords[name] = coord
 
         counter_y += 1
 
-    ax.text(0.0, -0.05, 'Reference Attributions')
+    ax.text(0.0, -0.05, "Reference Attributions")
 
     counter_y = 0
     for name, score in attribution_prediction_ranking.sort_values(
-            ascending=False).items():
+        ascending=False
+    ).items():
         color_idx = (np.abs(color_steps - score)).argmin()
 
         coord = top_y / 1.0, (top_y - counter_y) / top_y * padding_factor
-        ax.text(coord[0], coord[1], name,
-                bbox={'facecolor': cm(color_idx), 'alpha': 0.4, 'pad': 3})
+        ax.text(
+            coord[0],
+            coord[1],
+            name,
+            bbox={"facecolor": cm(color_idx), "alpha": 0.4, "pad": 3},
+        )
 
         pred_coords[name] = coord
 
         counter_y += 1
 
-    ax.text(top_y / 1.0, -0.05, 'Predicted Attributions')
+    ax.text(top_y / 1.0, -0.05, "Predicted Attributions")
 
     for name, start_coord in ref_coords.items():
-
         if name not in pred_coords:
             continue
 
@@ -528,10 +588,16 @@ def plot_attribution_rankings(attribution_reference_ranking,
         x_end_offs = 0.6
         y_offs = 0.01
 
-        ax.arrow(start_coord[0] + x_offs, start_coord[1] + y_offs,
-                 end_coord[0] - start_coord[0] - x_offs - x_end_offs,
-                 end_coord[1] - start_coord[1] + y_offs, head_width=0.01,
-                 head_length=0.5, fc='gray', ec='gray')
+        ax.arrow(
+            start_coord[0] + x_offs,
+            start_coord[1] + y_offs,
+            end_coord[0] - start_coord[0] - x_offs - x_end_offs,
+            end_coord[1] - start_coord[1] + y_offs,
+            head_width=0.01,
+            head_length=0.5,
+            fc="gray",
+            ec="gray",
+        )
 
     ax.set_axis_off()
 
@@ -539,14 +605,13 @@ def plot_attribution_rankings(attribution_reference_ranking,
 
     if png_dir is not None:
         os.makedirs(png_dir, exist_ok=True)
-        file_name = "_".join(title.split()).replace(".", '_')
+        file_name = "_".join(title.split()).replace(".", "_")
         file_name = get_filtered_dir(file_name)
-        plt.savefig(os.path.join(png_dir, file_name),
-                    dpi=300, bbox_inches='tight')
+        plt.savefig(os.path.join(png_dir, file_name), dpi=300, bbox_inches="tight")
 
     if show_plot:
         plt.show()
     else:
         plt.cla()
         plt.clf()
-        plt.close('all')
+        plt.close("all")
