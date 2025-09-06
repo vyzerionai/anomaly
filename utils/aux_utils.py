@@ -23,14 +23,23 @@ class BaseAuxiliaryFeature(metaclass=abc.ABCMeta):
 class FourierAuxiliaryFeature(BaseAuxiliaryFeature):
     """Augments raw features with Fourier-transformed auxiliary features."""
 
-    def __init__(self, selected_features: list[str], num_fourier_coeffs: int = 4):
+    def __init__(
+        self,
+        selected_features: list[str],
+        num_fourier_coeffs: int = 4,
+        low_pass_threshold: float = np.inf,
+    ):
         self._selected_features = selected_features
         self._num_fourier_coeffs = num_fourier_coeffs
         self._feature_names = None
+        self._low_pass_threshold = low_pass_threshold
 
     def append(self, flight_data: pd.DataFrame) -> pd.DataFrame:
         """Returns a new dataframe, appended with the auxiliary features."""
         (n_points, n_features) = flight_data.shape
+        fnames = [col for col in flight_data.columns if col.startswith("aux_fft")]
+        if len(fnames) > 0:
+            flight_data = flight_data.drop(columns=fnames)
         fnames = []
 
         for feature in self._selected_features:
@@ -57,6 +66,7 @@ class FourierAuxiliaryFeature(BaseAuxiliaryFeature):
                 f_array = np.concatenate(
                     [np.zeros(points_prepend), Sxx[f, :], np.zeros(points_postpend)]
                 )
+                f_array[f_array > self._low_pass_threshold] = 0.0
                 fname = "aux_fft%d_%s" % (f, feature)
                 flight_data[fname] = f_array
                 fnames.append(fname)
