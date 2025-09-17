@@ -1,13 +1,13 @@
 """Utilities to to generate or modify data samples."""
 
-from typing import Dict, List, Sequence, Mapping
 import collections
+from typing import Dict, List, Mapping, Sequence
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
-from keras.utils import to_categorical
 from absl import logging
+from keras.utils import to_categorical
 
 
 class Variable(object):

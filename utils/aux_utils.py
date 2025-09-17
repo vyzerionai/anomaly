@@ -1,10 +1,11 @@
 import abc
-import pandas as pd
-import numpy as np
-from typing import Sequence, Optional, Mapping, Dict
-from scipy import signal
 import collections
+from typing import Dict, Mapping, Optional, Sequence
+
+import numpy as np
+import pandas as pd
 from absl import logging
+from scipy import signal
 
 
 class BaseAuxiliaryFeature(metaclass=abc.ABCMeta):

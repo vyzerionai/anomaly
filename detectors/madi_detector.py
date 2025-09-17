@@ -1,9 +1,10 @@
 import os
+
+import keras
 import numpy as np
 import pandas as pd
 from absl import logging
 from anomaly.utils import sample_utils
-import keras
 
 _MODEL_FILENAME = "model-multivariate-ad.keras"
 _NORMALIZATION_FILENAME = "normalization_info"
@@ -59,3 +60,7 @@ class MadiDetector:
     @property
     def model(self):
         return self._model
+
+    @property
+    def normalization_info(self):
+        return self._normalization_info
