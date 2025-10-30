@@ -37,6 +37,9 @@ class FourierAuxiliaryFeature(BaseAuxiliaryFeature):
 
     def append(self, flight_data: pd.DataFrame) -> pd.DataFrame:
         """Returns a new dataframe, appended with the auxiliary features."""
+
+        f_cols = {}
+
         (n_points, n_features) = flight_data.shape
         fnames = [col for col in flight_data.columns if col.startswith("aux_fft")]
         if len(fnames) > 0:
@@ -69,10 +72,15 @@ class FourierAuxiliaryFeature(BaseAuxiliaryFeature):
                 )
                 f_array[f_array > self._low_pass_threshold] = 0.0
                 fname = "aux_fft%d_%s" % (f, feature)
-                flight_data[fname] = f_array
+                f_cols[fname] = f_array
                 fnames.append(fname)
         if self._feature_names is None:
             self._feature_names = fnames
+
+        flight_data = pd.concat(
+            [flight_data, pd.DataFrame(f_cols, index=flight_data.index)], axis=1
+        )
+
         return flight_data
 
     @property
