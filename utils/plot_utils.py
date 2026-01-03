@@ -470,14 +470,15 @@ def plot_attribution_timeseries(
     ranked_feature_cutoff: float = 0.2,
 ):
     """Plots the Attribution Timeseries (Anomaly Severity Timeline).
-  
+
     Args:
         attribution_timeseries: dataframe that contains feature columns with attributions
         predictions: dataframe with the 'class_prob' column of anomaly scores
         engine_sn: engine serial number
         flight_id: flight id
         plot_dir: target directory to save the plot
-        show_plot: whether to display the plot    
+        show_plot: whether to display the plot
+        ranked_feature_cutoff: threshold to plot an attribution slice on the timeline
     """
 
     feature_names = [f for f in attribution_timeseries.columns if f != "class_prob"]
@@ -558,9 +559,7 @@ def plot_attribution_timeseries(
         os.makedirs(plot_dir, exist_ok=True)
         file_name = "%s-%s_attribution_timeseries_plot.png" % (engine_sn, flight_id)
         file_name = get_filtered_dir(file_name)
-        plt.savefig(
-            os.path.join(plot_dir, file_name), dpi=300, bbox_inches="tight"
-        )
+        plt.savefig(os.path.join(plot_dir, file_name), dpi=300, bbox_inches="tight")
     if show_plot:
         plt.show()
     else:
