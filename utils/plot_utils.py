@@ -466,6 +466,16 @@ def plot_attribution_timeseries(
     plot_dir: str,
     show_plot: bool = True,
 ):
+    """Plots the Attribution Timeseries (Anomaly Severity Timeline).
+  
+    Args:
+        attribution_timeseries: dataframe that contains feature columns with attributions
+        predictions: dataframe with the 'class_prob' column of anomaly scores
+        engine_sn: engine serial number
+        flight_id: flight id
+        plot_dir: target directory to save the plot
+        show_plot: whether to display the plot    
+    """
 
     feature_names = [f for f in attribution_timeseries.columns if f != "class_prob"]
 
