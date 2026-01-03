@@ -14,6 +14,8 @@ import matplotlib as mpl
 
 from . import sample_utils
 
+_TIMESTAMP_INDEX = 2
+
 
 def get_filtered_dir(subject):
     cleaned_subject = re.sub(r"[^A-Za-z0-9_]", " ", subject)
@@ -465,6 +467,7 @@ def plot_attribution_timeseries(
     flight_id: str,
     plot_dir: str,
     show_plot: bool = True,
+    ranked_feature_cutoff: float = 0.2,
 ):
     """Plots the Attribution Timeseries (Anomaly Severity Timeline).
   
@@ -484,7 +487,7 @@ def plot_attribution_timeseries(
     ranked_features = (
         attribution_timeseries[feature_names].sum(axis=0).sort_values(ascending=False)
     )
-    ranked_features = ranked_features[ranked_features > 0.2]
+    ranked_features = ranked_features[ranked_features > ranked_feature_cutoff]
     ranked_features.name = "sum_attrib"
 
     smallest_to_largest = list(ranked_features.sort_values().index)
@@ -493,7 +496,7 @@ def plot_attribution_timeseries(
         axis=1
     )
 
-    timestamps = [i[2] for i in predictions.index]
+    timestamps = [i[_TIMESTAMP_INDEX] for i in predictions.index]
 
     normal_timestamps = list(set(timestamps).difference(set(anomalous_timestamps)))
 
