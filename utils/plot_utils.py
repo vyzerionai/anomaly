@@ -557,7 +557,7 @@ def plot_attribution_timeseries(
     plt.style.use("dark_background")
     if plot_dir is not None:
         os.makedirs(plot_dir, exist_ok=True)
-        file_name = "%s-%s_attribution_timeseries_plot.png" % (engine_sn, flight_id)
+        file_name = "%s_%s_attribution_timeseries_plot" % (engine_sn, flight_id)
         file_name = get_filtered_dir(file_name)
         plt.savefig(os.path.join(plot_dir, file_name), dpi=300, bbox_inches="tight")
     if show_plot:
