@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib as mpl
 
 from . import sample_utils
 
@@ -448,6 +449,104 @@ def plot_variable_timeseries(
         file_name = get_filtered_dir(file_name)
         plt.savefig(
             os.path.join(timeseries_dir, file_name), dpi=300, bbox_inches="tight"
+        )
+    if show_plot:
+        plt.show()
+    else:
+        plt.cla()
+        plt.clf()
+        plt.close("all")
+
+
+def plot_attribution_timeseries(
+    attribution_timeseries: pd.DataFrame,
+    predictions: pd.DataFrame,
+    engine_sn: str,
+    flight_id: str,
+    plot_dir: str,
+    show_plot: bool = True,
+):
+
+    feature_names = [f for f in attribution_timeseries.columns if f != "class_prob"]
+
+    anomalous_timestamps = attribution_timeseries.index
+
+    ranked_features = (
+        attribution_timeseries[feature_names].sum(axis=0).sort_values(ascending=False)
+    )
+    ranked_features = ranked_features[ranked_features > 0.2]
+    ranked_features.name = "sum_attrib"
+
+    smallest_to_largest = list(ranked_features.sort_values().index)
+
+    cumsum_attribution_timeseries = attribution_timeseries[smallest_to_largest].cumsum(
+        axis=1
+    )
+
+    timestamps = [i[2] for i in predictions.index]
+
+    normal_timestamps = list(set(timestamps).difference(set(anomalous_timestamps)))
+
+    df_normal = pd.DataFrame(
+        np.zeros((len(normal_timestamps), len(attribution_timeseries.columns))),
+        index=normal_timestamps,
+        columns=attribution_timeseries.columns,
+    )
+
+    full_attribution_timeseries = pd.concat([cumsum_attribution_timeseries, df_normal])
+    full_attribution_timeseries = full_attribution_timeseries.sort_index()
+
+    fig, ax = plt.subplots(figsize=(15, 8))
+    ax.set_ylim(-0.05, 1.05)
+
+    ax.tick_params(axis="x", labelsize=18)
+    ax.tick_params(axis="y", labelsize=18)
+
+    ax.xaxis.set_minor_locator(mdates.MinuteLocator())
+    ax.xaxis.set_minor_locator(mdates.HourLocator())
+
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+
+    ax.plot(
+        timestamps,
+        1.0 - predictions["class_prob"],
+        label="anomaly score",
+        linewidth=2.0,
+        alpha=0.5,
+        color="white",
+    )
+    ax.set_facecolor("black")
+    ax.grid(which="major", color="gray", linestyle="-", linewidth=0.5)
+
+    colors = mpl.colormaps["hsv"].resampled(len(full_attribution_timeseries.columns))
+
+    largest_to_smallest = smallest_to_largest[::-1]
+    for i, feature in enumerate(largest_to_smallest):
+
+        if feature == "class_prob":
+            continue
+        ax.fill_between(
+            timestamps,
+            full_attribution_timeseries[feature],
+            alpha=1.0,
+            color=colors(i),
+            label=feature,
+            linewidth=0.2,
+            edgecolor="white",
+        )
+
+    ax.set_title(
+        "Anomaly Severity Timeline for %s %s" % (engine_sn, flight_id), fontsize=18
+    )
+
+    ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0))
+    plt.style.use("dark_background")
+    if plot_dir is not None:
+        os.makedirs(plot_dir, exist_ok=True)
+        file_name = "%s-%s_attribution_timeseries_plot.png" % (engine_sn, flight_id)
+        file_name = get_filtered_dir(file_name)
+        plt.savefig(
+            os.path.join(plot_dir, file_name), dpi=300, bbox_inches="tight"
         )
     if show_plot:
         plt.show()
