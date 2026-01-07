@@ -567,6 +567,27 @@ def plot_attribution_timeseries(
         plt.clf()
         plt.close("all")
 
+def hpa_to_feet_msl(pressure_hpa):
+    """
+    Converts atmospheric pressure in hPa to altitude in feet MSL
+    using the International Standard Atmosphere (ISA) model.
+
+    Parameters:
+    pressure_hpa (float or np.array): Pressure in hectopascals (hPa/mb)
+
+    Returns:
+    float or np.array: Altitude in feet above Mean Sea Level
+    """
+    # Standard constants for the ISA model
+    P0 = 1013.25  # Standard sea-level pressure in hPa
+
+    # The simplified hypsometric formula for the troposphere:
+    # Altitude in feet = 145366.45 * (1 - (P/P0)^0.190284)
+
+    altitude_feet = 145366.45 * (1 - (np.array(pressure_hpa) / P0) ** 0.190284)
+
+    return altitude_feet
+
 
 def plot_pair_plots(observations):
     """Plots scatter plots of the data."""
