@@ -482,6 +482,8 @@ def plot_attribution_timeseries(
         show_plot: whether to display the plot
         ranked_feature_cutoff: threshold to plot an attribution slice on the timeline
         altitude_color: color of the altitude line on the plot
+
+    Returns: file path to the plot or None if not saved
     """
 
     feature_names = [f for f in attribution_timeseries.columns if f != "class_prob"]
@@ -581,17 +583,20 @@ def plot_attribution_timeseries(
 
     ax.legend(loc="upper left", bbox_to_anchor=(1.1, 1.0))
 
+    file_path = None
     if plot_dir is not None:
         os.makedirs(plot_dir, exist_ok=True)
         file_name = "%s_%s_attribution_timeseries_plot" % (engine_sn, flight_id)
         file_name = get_filtered_dir(file_name)
-        plt.savefig(os.path.join(plot_dir, file_name), dpi=300, bbox_inches="tight")
+        file_path = os.path.join(plot_dir, file_name)
+        plt.savefig(file_path, dpi=300, bbox_inches="tight")
     if show_plot:
         plt.show()
     else:
         plt.cla()
         plt.clf()
         plt.close("all")
+    return file_path
 
 
 def hpa_to_feet_msl(pressure_hpa):
