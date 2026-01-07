@@ -15,6 +15,7 @@ import matplotlib as mpl
 from . import sample_utils
 
 _TIMESTAMP_INDEX = 2
+_AMBIENT_PRESSURE_FIELD_NAME = "pAmbient[hPa]"
 
 
 def get_filtered_dir(subject):
@@ -468,6 +469,7 @@ def plot_attribution_timeseries(
     plot_dir: str,
     show_plot: bool = True,
     ranked_feature_cutoff: float = 0.2,
+    altitude_color="lime",
 ):
     """Plots the Attribution Timeseries (Anomaly Severity Timeline).
 
@@ -479,6 +481,7 @@ def plot_attribution_timeseries(
         plot_dir: target directory to save the plot
         show_plot: whether to display the plot
         ranked_feature_cutoff: threshold to plot an attribution slice on the timeline
+        altitude_color: color of the altitude line on the plot
     """
 
     feature_names = [f for f in attribution_timeseries.columns if f != "class_prob"]
@@ -510,6 +513,7 @@ def plot_attribution_timeseries(
     full_attribution_timeseries = pd.concat([cumsum_attribution_timeseries, df_normal])
     full_attribution_timeseries = full_attribution_timeseries.sort_index()
 
+    plt.style.use("dark_background")
     fig, ax = plt.subplots(figsize=(15, 8))
     ax.set_ylim(-0.05, 1.05)
 
@@ -520,13 +524,15 @@ def plot_attribution_timeseries(
     ax.xaxis.set_minor_locator(mdates.HourLocator())
 
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
+    ax.set_ylabel("Anomaly Score [0 - normal, 1 - anomalous]", fontsize=12)
+    ax.set_xlabel("Time [UTC]", fontsize=12)
 
     ax.plot(
         timestamps,
         1.0 - predictions["class_prob"],
         label="anomaly score",
         linewidth=2.0,
-        alpha=0.5,
+        alpha=0.8,
         color="white",
     )
     ax.set_facecolor("black")
@@ -549,12 +555,32 @@ def plot_attribution_timeseries(
             edgecolor="white",
         )
 
+    # Plot the pressure altitude line.
+    if _AMBIENT_PRESSURE_FIELD_NAME in predictions.columns:
+
+        pressure_altitude = hpa_to_feet_msl(predictions[_AMBIENT_PRESSURE_FIELD_NAME])
+
+        ax2 = ax.twinx()
+
+        ax2.tick_params(axis="y", labelsize=12, labelcolor=altitude_color)
+
+        ax2.set_ylabel("Pressure Altitude [ft MSL]", color=altitude_color, fontsize=12)
+
+        ax2.plot(
+            timestamps,
+            pressure_altitude,
+            label="ft [msl]",
+            linewidth=2.0,
+            alpha=1.0,
+            color=altitude_color,
+        )
+
     ax.set_title(
         "Anomaly Severity Timeline for %s %s" % (engine_sn, flight_id), fontsize=18
     )
 
-    ax.legend(loc="upper left", bbox_to_anchor=(1.0, 1.0))
-    plt.style.use("dark_background")
+    ax.legend(loc="upper left", bbox_to_anchor=(1.1, 1.0))
+
     if plot_dir is not None:
         os.makedirs(plot_dir, exist_ok=True)
         file_name = "%s_%s_attribution_timeseries_plot" % (engine_sn, flight_id)
@@ -566,6 +592,7 @@ def plot_attribution_timeseries(
         plt.cla()
         plt.clf()
         plt.close("all")
+
 
 def hpa_to_feet_msl(pressure_hpa):
     """
