@@ -596,7 +596,8 @@ def plot_attribution_timeseries(
         plt.cla()
         plt.clf()
         plt.close("all")
-    return file_path
+    return file_path + ".png"
+
 
 
 def hpa_to_feet_msl(pressure_hpa):
