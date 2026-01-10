@@ -488,7 +488,6 @@ def plot_variable_timeseries(
 
     plt.title("%s timeseries %s" % (variable_name, label), fontsize=24)
     plt.legend(loc="lower left", fontsize=20)
-    plt.grid(True)
 
     if timeseries_dir is not None:
         os.makedirs(timeseries_dir, exist_ok=True)
@@ -577,7 +576,7 @@ def plot_attribution_timeseries(
         timestamps,
         1.0 - predictions["class_prob"],
         label="anomaly score",
-        linewidth=2.0,
+        linewidth=1.0,
         alpha=0.8,
         color="white",
     )
