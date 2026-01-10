@@ -140,39 +140,79 @@ def create_feature_df(
 def plot_feature_spread(
     df_feature, palette="Greens", png_dir=None, subject=None, show_plot=True
 ):
-    """Plots a boxplot for each feature in a flight."""
+    """Plots a boxplot with high-contrast bright lines and circles on black."""
+    
+    plt.style.use("dark_background")
     nfeatures = len(df_feature["feature_name"].unique())
-    _ = plt.figure(figsize=(20, nfeatures))
-    sns.set(style="whitegrid")
+    fig, ax = plt.subplots(figsize=(20, nfeatures))
 
-    ax = sns.boxplot(
+    # Force pure black background
+    fig.patch.set_facecolor('black')
+    ax.set_facecolor('black')
+
+    # Define high-contrast properties
+    # We use 'white' or very light gray (#E0E0E0) for maximum brightness
+    bright_props = {
+        'color': 'white', 
+        'linewidth': 1.5
+    }
+    
+    flier_props = {
+        # 'markerfacecolor': 'white', 
+        'markeredgecolor': 'white', 
+        'markersize': 5, 
+        'alpha': 0.5
+    }
+
+    sns.boxplot(
         data=df_feature,
         y="feature_name",
         x="feature_value",
         hue="is_baseline",
         palette=sns.color_palette(palette, 2),
+        ax=ax,
+        # Making the lines and circles brighter:
+        whiskerprops=bright_props,
+        capprops=bright_props,
+        medianprops={'color': 'white', 'linewidth': 2}, # Extra thick median
+        boxprops={'edgecolor': 'white'},               # Bright box borders
+        flierprops=flier_props                         # Bright outlier circles
     )
-    ax.grid(True)
 
-    ax.set_title("Feature Spread comparison", fontsize=20)
-    plt.legend(fontsize=16)
+    # Grid and Text Styling
+    ax.grid(True, color="#444444", linestyle='--', alpha=0.5)
+    ax.set_title("Baseline Comparison", fontsize=20, color="white", pad=20)
+    # ax.set_xlabel("Feature Value", color="#D3D3D3", fontsize=14)
+    # ax.set_ylabel("Feature Name", color="#D3D3D3", fontsize=14)
+    ax.set_xlabel(None) 
+    ax.set_ylabel(None) 
+    
+    # Brighten the axis spines
+    for spine in ax.spines.values():
+        spine.set_edgecolor('#888888')
+
+    # Legend Styling
+    legend = ax.legend(fontsize=16, facecolor='black', edgecolor='white')
+    for text in legend.get_texts():
+        text.set_color("white")
 
     # Saving as png
     if png_dir is not None:
         os.makedirs(png_dir, exist_ok=True)
-
-        # Identifying the png by the first feature in the feature spread
-        file_name = "%s_Feature_spread.png" % df_feature["feature_name"][0]
+        file_name = "%s_Feature_spread.png" % df_feature["feature_name"].iloc[0]
         if subject:
             file_name = "%s_%s" % (subject, file_name)
-        file_name = get_filtered_dir(file_name)
-        plt.savefig(os.path.join(png_dir, file_name), dpi=300, bbox_inches="tight")
+        plt.savefig(
+            os.path.join(png_dir, file_name), 
+            dpi=300, 
+            bbox_inches="tight", 
+            facecolor='black'
+        )
+
     if show_plot:
         plt.show()
     else:
-        plt.cla()
-        plt.clf()
-        plt.close("all")
+        plt.close(fig)
 
 
 def plot_attribution(
@@ -373,17 +413,21 @@ def plot_variable_timeseries(
         ad_name: name of the AD
         show_plot: whether to display plots
     """
+    plt.style.use("dark_background")
     fig, ax = plt.subplots()
     ax2 = ax.twinx()
     fig.set_figheight(15)
     fig.set_figwidth(50)
     ax.tick_params(axis="x", labelsize=24)
     ax.tick_params(axis="y", labelsize=24)
-    ax2.tick_params(axis="y", labelsize=24)
+    ax2.tick_params(axis="y", labelsize=24,  labelcolor="orange")
     ax2.set_ylim(-0.05, 1.05)
-    ax2.set_ylabel("Anomaly Score", color="red", fontsize=14)
+    ax2.set_ylabel("Anomaly Score", color="orange", fontsize=24)
+    ax2.grid(False, axis='y') 
     ax.xaxis.set_minor_locator(mdates.MinuteLocator())
     ax.xaxis.set_minor_locator(mdates.HourLocator())
+
+    ax.grid(axis='both', linestyle='-', alpha=0.6)
 
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M"))
 
@@ -393,7 +437,7 @@ def plot_variable_timeseries(
         timestamps,
         observations[variable_name],
         label=variable_name,
-        linewidth=2.0,
+        linewidth=3.0,
         marker=None,
         color="green",
     )
@@ -434,7 +478,7 @@ def plot_variable_timeseries(
             timestamps,
             ad_smoothed,
             label=ad_name,
-            linewidth=2.0,
+            linewidth=3.0,
             marker=None,
             color="orange",
         )
@@ -443,7 +487,7 @@ def plot_variable_timeseries(
         tick.set_rotation(0)
 
     plt.title("%s timeseries %s" % (variable_name, label), fontsize=24)
-    plt.legend(loc="lower left", fontsize=16)
+    plt.legend(loc="lower left", fontsize=20)
     plt.grid(True)
 
     if timeseries_dir is not None:
